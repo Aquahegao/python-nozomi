@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Iterable, List
 
 import requests
+import aiohttp
 from dacite import from_dict
 
 from nozomi.data import Post
@@ -41,31 +42,26 @@ def get_post(url: str) -> Post:
         raise
 
 
-def get_posts(positive_tags: List[str], negative_tags: List[str]=None) -> Iterable[Post]:
-    """Retrieve all post data that contains and doesn't contain certain tags.
+async def get_post(url: str) -> Post:
+    """Retrieve a single post.
 
     Args:
-        positive_tags: The tags that the posts retrieved must contain.
-        negative_tags: Optional, blacklisted tags.
+        url: The URL of the post to retrieve.
 
-    Yields:
-        A post in JSON format, which contains the positive tags and doesn't contain the negative
-        tags.
+    Returns:
+        A post in JSON format if it exists.
 
     """
-    if negative_tags is None:
-        negative_tags = list()
-    _LOGGER.debug('Retrieving posts with positive_tags=%s and negative_tags=%s',
-                  str(positive_tags), str(negative_tags))
+    _LOGGER.debug('Retrieving a post from URL "%s"', url)
     try:
-        positive_post_urls = _get_post_urls(positive_tags)
-        negative_post_urls = _get_post_urls(negative_tags)
-        relevant_post_urls = set(positive_post_urls) - set(negative_post_urls)
-        for post_url in relevant_post_urls:
-            post_data = requests.get(post_url).json()
-            _LOGGER.debug(post_data)
-            yield from_dict(data_class=Post, data=post_data)
-    except InvalidTagFormat:
+        post_id = parse_post_id(url)
+        post_url = create_post_filepath(post_id)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(post_url) as r:
+                post_data = await r.json()
+        _LOGGER.debug(post_data)
+        return from_dict(data_class=Post, data=post_data)
+    except InvalidUrlFormat:
         raise
     except Exception as ex:
         _LOGGER.exception(ex)
