@@ -5,4 +5,4 @@
 
 ~~[get_post](https://github.com/Aquahegao/python-nozomi/blob/master/nozomi/api.py#L45) 함수만 비동기로 변환하였고, 그 외의 다른 모듈은 전부 동기 모듈입니다.~~
 
-v2.0 업데이트 이후 내장 모듈로 통합될 예정입니다.
+v2.0 업데이트 이후 내장 모듈로 통합됩니다.
